@@ -1,0 +1,94 @@
+library(data.table)
+library(dplyr)
+library(openxlsx)
+
+so_master <- read.xlsx("H:/Code/supportFiles/Sales_Order_Master/SO_Master.xlsx")
+
+# Process the RMA information
+rma_edit <- function(rma, rmaDetails, outputString = "Default.xlsx") {
+	rma <- buildTable(rma, rmaDetails)
+	rma <- addReasonCodes(rma)
+	rmaOutput <- addProductFamilies(rma)
+	rmaOutput <- addUserDefs(rmaOutput)
+	write.xlsx(rmaOutput, outputString, asTable = FALSE)
+}
+
+# Build the table. 
+# There are a few steps in this part of the process. First, the columns are cleaned.
+# Then the Dates are converted and the sales order numbers are added.
+# Column names are then redefined, error codes are added, then the summaries are formatted
+buildTable <- function(rma, rmaDetails) {
+	rma <- arrange(rma, desc(RMA.ID))
+ 	rmaDetails <- arrange(rmaDetails, desc(RMA.ID))
+	rma[, c(2, 3, 4, 6, 11, 13, 14, 16, 17)] = ""
+	rma[,1] = convertToDate(rma[, 1], origin = "1900-01-01")
+	rma[,2] <- rmaDetails$SO.ID
+	columns <- c("Date", "orig_SO", "ShipDate", "Specifier", "Customer", 
+		"Job_Name", "RMA_Comments", "Summary", "Product_Family", "Qty", "Qty_On_Order", 
+		"Prob_Part", "Replaced", "Repl_SO", "RMA", "Comments", "Code")
+	colnames(rma) <- columns
+	rma$Code <- rmaDetails$Reason.Code
+	rma <- rma[,-7]
+	rma$Summary <- as.data.table(strsplit(rma$Summary, " // "))[2] %>%
+		t()
+	rma$orig_SO <- rmaDetails$SO.ID
+	rma
+}
+
+# Read the reason code CSV and change them in the rma table.
+addReasonCodes <- function(rma) {
+	codes <- read.csv("H:/Code/supportFiles/Reasoncode.csv", header = TRUE)
+	rma <- merge(rma, codes, by.x = c("Code"), by.y = c("reason"))[c(2:17)]
+	rma
+}
+
+# Split into groups for drivers, light engines, and other parts, then 
+#	change the product families.
+addProductFamilies <- function(rma) {
+	engines <- rma[grep("LEM-", rma$Prob_Part),]
+	drivers <- rma[grep("SP-[0-9]{3}-[0-9]{4}-", rma$Prob_Part),]
+	others <- rma
+	others <- others[-grep("LEM-|SP-[0-9]{3}-[0-9]{4}-", others$Prob_Part),]
+	engineToPartFam <- read.csv("H:/Code/supportFiles/LightEngineToPartFam.csv")
+	names(engineToPartFam) <- c("Item.ID", "Product.Family")
+	driverToPartFam <- read.csv("H:/Code/supportFiles/driverToPartFam.csv")
+	names(driverToPartFam) <- c("Item.ID", "Product.Family")
+	engines <- cbind(engines, PartFam = substring(engines$Prob_Part, 1, 7))
+	drivers <- cbind(drivers, PartFam = substring(drivers$Prob_Part, 1, 6))
+	engines <- merge(engines, engineToPartFam, by.x = c("PartFam"), by.y = c("Item.ID"))
+	drivers <- merge(drivers, driverToPartFam, by.x = c("PartFam"), by.y = c("Item.ID"))
+	engines$Product_Family <- engines$Product.Family
+	drivers$Product_Family <- drivers$Product.Family
+	engines <- engines[c(2:17)]
+	drivers <- drivers[c(2:17)]
+	rmaOutput <- rbind(engines, drivers) %>%
+		rbind(others) %>%
+		as.data.table()
+	rmaOutput <- rmaOutput[order(-rmaOutput$RMA),]
+	rmaOutput
+}
+
+addUserDefs <- function(rma) {
+	so_master <- read.csv("H:/Code/supportFiles/so_User_Defs.csv")
+	rma <- left_join(rma, so_master, by = c("orig_SO" = "Sales.Order.ID"))
+	rma$Specifier <- rma$Specifier.User.Def.3
+	rma$Job_Name <- rma$Job.Name.User.Def.5
+	rma <- rma[1:16]
+	rma
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
