@@ -4,7 +4,7 @@ library(openxlsx)
 
 # Test line of code.
 
-so_master <- read.xlsx("H:/Code/supportFiles/Sales_Order_Master/SO_Master.xlsx")
+so_master <- read.xlsx("Code/supportFiles/Sales_Order_Master/SO_Master.xlsx")
 
 # Process the RMA information
 rma_edit <- function(rma, rmaDetails, outputString = "Default.xlsx") {
