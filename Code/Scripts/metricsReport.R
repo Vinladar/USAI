@@ -23,4 +23,14 @@ rma2 <- select(rma, RMA.ID, Item.ID, Item.Name, Return.Qty, Reason.Code)
 rma3 <- merge(rma2, reasonCodes, by.x = c("Reason.Code"), by.y = c("reason"))[c(2:6)]
 rma3 <- rename(rma3, Reason.Code = code)
 
-
+getDrivers <- function(rma) {
+  rmaDrivers <- rma[grep("SP-[0-9]{3}-[0-9]{4}", rma$Item.ID),]
+  groupedDrivers <- merge(rmaDrivers, driver_to_E2, by.x = c("Item.ID"), by.y = c("SP_Kit"))
+  groupedDrivers <- groupedDrivers[,c(2, 4, 6)]
+  groupedDrivers <- group_by(groupedDrivers, E2)
+  groupedDrivers <- summarize(groupedDrivers, length(unique(RMA.ID)), sum(Return.Qty))
+  names(groupedDrivers) <- c("E2", "Number_of_RMAs", "Qty")
+  g <- ggplot(data = groupedDrivers, aes(x = reorder(E2, -Qty), y = Qty))
+  g + geom_bar(stat = "identity") + labs(x = "Driver")
+  
+}
