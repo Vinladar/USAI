@@ -31,6 +31,6 @@ getDrivers <- function(rma) {
   groupedDrivers <- summarize(groupedDrivers, length(unique(RMA.ID)), sum(Return.Qty))
   names(groupedDrivers) <- c("E2", "Number_of_RMAs", "Qty")
   g <- ggplot(data = groupedDrivers, aes(x = reorder(E2, -Qty), y = Qty))
-  g + geom_bar(stat = "identity") + labs(x = "Driver")
+  g + geom_bar(stat = "identity") + labs(x = "Driver") + geom_text(aes(label = Qty, y = Qty + 1.0), position = position_dodge(0.9), vjust = 0)
   
 }
