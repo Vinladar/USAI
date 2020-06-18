@@ -28,9 +28,33 @@ getDrivers <- function(rma) {
   groupedDrivers <- merge(rmaDrivers, driver_to_E2, by.x = c("Item.ID"), by.y = c("SP_Kit"))
   groupedDrivers <- groupedDrivers[,c(2, 4, 6)]
   groupedDrivers <- group_by(groupedDrivers, E2)
-  groupedDrivers <- summarize(groupedDrivers, length(unique(RMA.ID)), sum(Return.Qty))
-  names(groupedDrivers) <- c("E2", "Number_of_RMAs", "Qty")
+  groupedDrivers <- summarize(groupedDrivers, "Number_of_RMAs" = length(unique(RMA.ID)), Qty = sum(Return.Qty))
   g <- ggplot(data = groupedDrivers, aes(x = reorder(E2, -Qty), y = Qty))
   g + geom_bar(stat = "identity") + labs(x = "Driver") + geom_text(aes(label = Qty, y = Qty + 1.0), position = position_dodge(0.9), vjust = 0)
   
+}
+
+getLightEngines <- function(rma) {
+  rmaEngines <- rma[grep("LEM", rma$Item.ID),]
+  rmaEngines <- cbind(rmaEngines, Item.ID = substring(rmaEngines$Item.ID, 1, 7))[,c(6, 4, 1)]
+  groupedEngines <- group_by(rmaEngines, Item.ID)
+  groupedEngines <- summarize(groupedEngines, "# of RMAs" = length(unique(RMA.ID)),  Qty = sum(Return.Qty))
+  groupedEngines <- arrange(groupedEngines, desc(Qty))
+  g <- ggplot(data = groupedEngines, aes(x = reorder(Item.ID, -Qty), y = Qty))
+  g + geom_bar(stat = "identity") + labs(x = "Light Engine") + geom_text(aes(label = Qty, y = Qty + 2.0), position = position_dodge(0.9), vjust = 0)
+}
+
+getReasonCodes <- function(rma) {
+  codes <- rma[, c(5, 4, 1)]
+  groupedCodes <- group_by(codes, Reason.Code) %>%
+    summarize("Number of RMAs" = length(unique(RMA.ID)), Qty = sum(Return.Qty)) %>%
+    arrange(desc(Qty))
+  g <- ggplot(data = groupedCodes, aes(x = reorder(Reason.Code, -Qty), y = Qty))
+  g + geom_bar(stat = "identity") + labs(x = "Reason Code") + geom_text(aes(label = Qty, y = Qty + 2.0), position = position_dodge(0.9), vjust = 0)
+}
+
+generateGraphs <- function(rma) {
+  getDrivers(rma)
+  getLightEngines(rma)
+  getReasonCodes(rma)
 }
