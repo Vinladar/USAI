@@ -3,25 +3,20 @@
 library(dplyr)
 library(data.table)
 library(openxlsx)
+library(ggplot2)
 
 # Generate the light engine report. 
-loadLightEngines <- function(X, output) {
+loadLightEngines <- function(X, output = "Code/Output/Output.xlsx") {
 # Remove the columns from the dataframe that are not needed.
-	X <- X[,c("Item.ID", "Return.Qty")]
-# Use a RegEx to to filter out everything but light engines.
-	light_engines <- X[grep("LEM-[0-9]{3}-[0-9]{2}", X$Item.ID),]
-# Remove the parts of the light engine kit number that are not needed.
-	light_engines$Item.ID <- substring(light_engines$Item.ID, 1, 7)
-# Cast the return quantity as a numeric value so that we can aggregate the results.
-	light_engines$Return.Qty <- as.numeric(light_engines$Return.Qty)
-# Aggregate the results
-	engines <- aggregate(light_engines$Return.Qty, by = list(light_engines$Item.ID), sum)
-# Change the column names.
-	colnames(engines) <- c("Engine", "Quantity")
-# Sort the results by quantity in descending order.
-	engines <- engines[order(-engines$Quantity),]
-# Output the results to a file.
-	write.xlsx(engines, output, asTable=FALSE)
+  X <- select(X, RMA.ID, Item.ID, Return.Qty)
+  lightEngines <- X[grep("LEM-", X$Item.ID),]
+  lightEngines$Item.ID <- substring(lightEngines$Item.ID, 1, 7)
+  grpLightEngines <- group_by(lightEngines, Item.ID)
+  grpLightEngines <- arrange(grpLightEngines, Return.Qty)
+  grpLightEngines <- summarise(grpLightEngines, length(unique(RMA.ID)), sum(Return.Qty))
+  names(grpLightEngines) <- c("Item_ID", "RMA_ID", "Qty")
+  grpLightEngines <- arrange(grpLightEngines, desc(Qty))
+  qplot(y = Qty, data = grpLightEngines[-grpLightEngines$RMA_ID,], geom = "bar")
 }
 
 # Generates the Reason code report.
@@ -39,7 +34,7 @@ reasonCodes <- function(X, output) {
 # Sort the results by quantity in descending order.
 	X4 <- X4[order(-X4$Quantity),]
 # Output the results to a file.
-	write.xlsx(X4, output, asTable = FALSE)
+#	write.xlsx(X4, output, asTable = FALSE)
 }
 
 # Generate the driver report.
@@ -69,6 +64,7 @@ loadDrivers <- function(X, output) {
 # Runs all three of the report functions.
 generateReports <- function(fileName, lightEngines = "engines.xlsx", drivers = "drivers.xlsx", codes = "codes.xlsx") {
 	X <- read.xlsx(fileName)
+	rma <- read.csv("Code/supportFiles/driver_to_E2.csv")
 	loadLightEngines(X, lightEngines)
 	loadDrivers(X, drivers)
 	reasonCodes(X, codes)

@@ -25,13 +25,20 @@ rma3 <- rename(rma3, Reason.Code = code)
 
 getDrivers <- function(rma) {
   rmaDrivers <- rma[grep("SP-[0-9]{3}-[0-9]{4}", rma$Item.ID),]
-  groupedDrivers <- merge(rmaDrivers, driver_to_E2, by.x = c("Item.ID"), by.y = c("SP_Kit"))
-  groupedDrivers <- groupedDrivers[,c(2, 4, 6)]
-  groupedDrivers <- group_by(groupedDrivers, E2)
-  groupedDrivers <- summarize(groupedDrivers, "Number_of_RMAs" = length(unique(RMA.ID)), Qty = sum(Return.Qty))
-  g <- ggplot(data = groupedDrivers, aes(x = reorder(E2, -Qty), y = Qty))
-  g + geom_bar(stat = "identity") + labs(x = "Driver") + geom_text(aes(label = Qty, y = Qty + 1.0), position = position_dodge(0.9), vjust = 0)
-  
+  groupedDrivers <- merge(rmaDrivers, driver_to_E2, by.x = c("Item.ID"), by.y = c("SP_Kit"))[,c(2, 4, 6)] %>%
+    group_by(E2)
+# groupedDrivers <- summarize(groupedDrivers, Qty = sum(Return.Qty))
+  splitDrivers <- group_split(groupedDrivers)
+  splitDrivers <- lapply(splitDrivers, function(x) {
+    cbind(x, Group = factor(1:nrow(x)))
+  })
+  groupedDrivers <- rbindlist(splitDrivers)[,c(2, 3, 4)]
+  g <- ggplot(data = groupedDrivers, 
+              aes(x = reorder(E2, -Return.Qty), y = Return.Qty, position = "stacked", fill = Group))
+  g + geom_bar(stat = "identity") + 
+    labs(x = "Driver") +
+    theme(axis.text.x = element_text(angle = 90), legend.position = "none") +
+    scale_fill_brewer(palette="Set1")
 }
 
 getLightEngines <- function(rma) {
