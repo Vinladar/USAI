@@ -18,14 +18,14 @@ driver_to_partFam <- read.csv("Code/supportFiles/driverToPartFam.csv")
 light_engines <- read.csv("Code/supportFiles/LightEngines.csv")
 light_engine_to_partFam <- read.csv("Code/supportFiles/LightEngineToPartFam.csv")
 
-rma <- loadData("Code/Failure_rate/May_2020.xlsx")
+rma <- loadData("Code/Failure_rate/June_2020.xlsx")
 rma2 <- select(rma, RMA.ID, Item.ID, Item.Name, Return.Qty, Reason.Code)
 rma3 <- merge(rma2, reasonCodes, by.x = c("Reason.Code"), by.y = c("reason"))[c(2:6)]
 rma3 <- rename(rma3, Reason.Code = code)
 
 getDrivers <- function(rma) {
   rmaDrivers <- rma[grep("SP-[0-9]{3}-[0-9]{4}", rma$Item.ID),]
-  groupedDrivers <- merge(rmaDrivers, driver_to_E2, by.x = c("Item.ID"), by.y = c("SP_Kit"))[,c(2, 4, 6)] %>%
+  groupedDrivers <- merge(rmaDrivers, driver_to_E2, by.x = c("Item.ID"), by.y = c("SP_Kit")) %>%
     group_by(E2)
 # groupedDrivers <- summarize(groupedDrivers, Qty = sum(Return.Qty))
   splitDrivers <- group_split(groupedDrivers)
@@ -42,7 +42,7 @@ getDrivers <- function(rma) {
 }
 
 getLightEngines <- function(rma) {
-  rmaEngines <- rma[grep("LEM", rma$Item.ID),]
+  rmaEngines <- rma[grep("LEM-", rma$Item.ID),]
   rmaEngines <- cbind(rmaEngines, Item.ID = substring(rmaEngines$Item.ID, 1, 7))[,c(6, 4, 1)]
   groupedEngines <- group_by(rmaEngines, Item.ID)
   groupedEngines <- summarize(groupedEngines, "# of RMAs" = length(unique(RMA.ID)),  Qty = sum(Return.Qty))
