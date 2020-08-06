@@ -25,7 +25,7 @@ rma3 <- rename(rma3, Reason.Code = code)
 
 getDrivers <- function(rma) {
   rmaDrivers <- rma[grep("SP-[0-9]{3}-[0-9]{4}", rma$Item.ID),]
-  groupedDrivers <- merge(rmaDrivers, driver_to_E2, by.x = c("Item.ID"), by.y = c("SP_Kit")) %>%
+  groupedDrivers <- merge(rmaDrivers, driver_to_E2, by.x = c("Item.ID"), by.y = c("SP_Kit"), all.x = TRUE) %>%
     group_by(E2)
 # groupedDrivers <- summarize(groupedDrivers, Qty = sum(Return.Qty))
   splitDrivers <- group_split(groupedDrivers)
@@ -54,10 +54,10 @@ getLightEngines <- function(rma) {
 getReasonCodes <- function(rma) {
   codes <- rma[, c(5, 4, 1)]
   groupedCodes <- group_by(codes, Reason.Code) %>%
-    summarize("Number of RMAs" = length(unique(RMA.ID)), Qty = sum(Return.Qty)) %>%
+    summarize(Number_of_RMAs = length(unique(RMA.ID)), Qty = sum(Return.Qty)) %>%
     arrange(desc(Qty))
-  g <- ggplot(data = groupedCodes, aes(x = reorder(Reason.Code, -Qty), y = Qty))
-  g + geom_bar(stat = "identity") + labs(x = "Reason Code") + geom_text(aes(label = Qty, y = Qty + 2.0), position = position_dodge(0.9), vjust = 0)
+  g <- ggplot(data = groupedCodes, aes(x = reorder(Reason.Code, -Number_of_RMAs), y = Number_of_RMAs))
+  g + geom_bar(stat = "identity") + labs(x = "Reason Code") + geom_text(aes(label = Number_of_RMAs, y = Number_of_RMAs + 2.0), position = position_dodge(0.9), vjust = 0)
 }
 
 generateGraphs <- function(rma) {
