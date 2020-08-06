@@ -18,9 +18,9 @@ driver_to_partFam <- read.csv("Code/supportFiles/driverToPartFam.csv")
 light_engines <- read.csv("Code/supportFiles/LightEngines.csv")
 light_engine_to_partFam <- read.csv("Code/supportFiles/LightEngineToPartFam.csv")
 
-rma <- loadData("Code/Failure_rate/June_2020.xlsx")
+rma <- loadData("Code/Failure_rate/July_2020.xlsx")
 rma2 <- select(rma, RMA.ID, Item.ID, Item.Name, Return.Qty, Reason.Code)
-rma3 <- merge(rma2, reasonCodes, by.x = c("Reason.Code"), by.y = c("reason"))[c(2:6)]
+rma3 <- merge(rma2, reasonCodes, by.x = c("Reason.Code"), by.y = c("reason"), all.x = TRUE)[c(2:6)]
 rma3 <- rename(rma3, Reason.Code = code)
 
 getDrivers <- function(rma) {
