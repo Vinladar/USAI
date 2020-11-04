@@ -13,7 +13,7 @@ calculate_totals <- function(Data, Output) {
                          "Problem Desc", "Credit Memo Date / ID", "Item ID", "Credit Memo ID", "Unit Price", 
                          "RMA ID", "Extended Price", "Credit Memo Complete", "Restocking Percent")
   clean_data$`RMA Date` <- convertToDate(clean_data$`RMA Date`, origin = "1900-01-01")
-  no_restock <- clean_data[clean_data$`Restocking Percent` == "", ]
+  no_restock <- clean_data[is.na(clean_data$`Restocking Percent`), ]
   no_restock_credit_memo <- no_restock[grep("..", no_restock$`Credit Memo Date / ID`), ]
   no_restock_credit_memo$`Extended Price` <- as.numeric(no_restock_credit_memo$`Extended Price`)
   final <- no_restock_credit_memo[grep("DEFECTIVE", no_restock_credit_memo$`Problem Desc`), ]
