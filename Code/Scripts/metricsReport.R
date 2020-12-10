@@ -26,11 +26,16 @@ rma3 <- rename(rma3, Reason.Code = code)
 
 getDrivers <- function(rma) {
   rmaDrivers <- rma[grep("SP-[0-9]{3}-[0-9]{4}", rma$Item.ID),]
-  groupedDrivers <- merge(rmaDrivers, driver_to_E2, by.x = c("Item.ID"), by.y = c("SP_Kit"), all.x = TRUE) %>%
-    group_by(E2)
-  groupedDrivers <- groupedDrivers[, c(2, 4, 6)]
+  driverIDs <- data.frame(do.call("rbind", strsplit(as.character(rmaDrivers$Item.ID), "-", fixed = TRUE)))
+  driversFinal <- cbind(rmaDrivers, driverIDs)
+  driversFinal <- driversFinal[, c(1, 2, 7, 8, 9, 3, 4, 5, 6)]
+  names(driversFinal) <- c("RMA.ID", "Item.ID", "X2", "X3", "Dim.Type", "Item.Name", "Return.Qty", "Reason.Code", "X1")
+  driversFinal <- driversFinal[, c(1, 2, 5, 6, 7, 8)]
+  groupedDrivers <- merge(driversFinal, driver_to_E2, by.x = c("Item.ID"), by.y = c("SP_Kit"), all.x = TRUE) %>%
+    group_by(E2, Dim.Type)
+  groupedDrivers1 <- groupedDrivers[, c(2, 3, 5, 6, 7)]
   groupedDrivers1 <- summarise(groupedDrivers, "# of RMAs" = length(unique(RMA.ID)),  Qty = sum(Return.Qty))
-  groupedDrivers1 <- groupedDrivers1[, c(2, 3, 1)]
+  groupedDrivers1 <- groupedDrivers1[, c(3, 4, 1, 2)]
   groupedDrivers1 <- arrange(groupedDrivers1, desc(Qty))
   write.csv(groupedDrivers1, "Code/Output/November_2020/Drivers.csv")
 }
