@@ -21,36 +21,37 @@ LEM_to_LED <- read.xlsx("Code/supportFiles/LEM_to_LED.xlsx")
 
 rma <- loadData("Code/Failure_rate/2020/December_2020.xlsx")
 rma2 <- select(rma, RMA.ID, Item.ID, Item.Name, Return.Qty, Reason.Code, Month)
-rma3 <- merge(rma2, reasonCodes, by.x = c("Reason.Code"), by.y = c("reason"), all.x = TRUE)[c(1, 3, 4, 5, 6, 7)]
+rma3 <- merge(rma2, reasonCodes, by.x = c("Reason.Code"), by.y = c("reason"), all.x = TRUE)[, c(2, 3, 5, 6, 7)]
 
 getDrivers <- function(rma) {
   rmaDrivers <- rma[grep("SP-[0-9]{3}-[0-9]{4}", rma$Item.ID),]
   driverIDs <- data.frame(do.call("rbind", strsplit(as.character(rmaDrivers$Item.ID), "-", fixed = TRUE)))
-  driversFinal <- cbind(rmaDrivers, driverIDs)
-  driversFinal <- driversFinal[, c(1, 2, 7, 8, 9, 3, 4, 5, 6)]
-  names(driversFinal) <- c("RMA.ID", "Item.ID", "X2", "X3", "Dim.Type", "Item.Name", "Return.Qty", "Reason.Code", "X1")
-  driversFinal <- driversFinal[, c(1, 2, 5, 6, 7, 8)]
-  groupedDrivers <- merge(driversFinal, driver_to_E2, by.x = c("Item.ID"), by.y = c("SP_Kit"), all.x = TRUE) %>%
-    group_by(E2, Dim.Type)
+  driversFinal <- cbind(rmaDrivers, driverIDs)[, c(1, 2, 3, 4, 5, 9)]
+  names(driversFinal) <- c("RMA_ID", "Item_ID", "Return_Qty", "Month", "Reason_Code", "DIM_Type")
+  groupedDrivers <- merge(driversFinal, driver_to_E2, by.x = c("Item_ID"), by.y = c("SP_Kit"), all.x = TRUE) %>%
+    group_by(E2, DIM_Type)
   groupedDrivers1 <- groupedDrivers[, c(2, 3, 5, 6, 7)]
-  groupedDrivers1 <- summarise(groupedDrivers, "# of RMAs" = length(unique(RMA.ID)),  Qty = sum(Return.Qty))
+  groupedDrivers1 <- summarise(groupedDrivers1, "# of RMAs" = length(unique(RMA_ID)),  Qty = sum(Return_Qty))
   groupedDrivers1 <- groupedDrivers1[, c(3, 4, 1, 2)]
   groupedDrivers1 <- arrange(groupedDrivers1, desc(Qty))
   write.csv(groupedDrivers1, "Code/Output/December_2020/Drivers.csv")
 }
 
 getLightEngines <- function(rma) {
+  names(light_engine_to_partFam) <- c("Item_ID", "Product_Family")
   rmaEngines <- rma[grep("LEM-", rma$Item.ID),]
   rmaEngines <- merge(rmaEngines, LEM_to_LED, by.x = c("Item.ID"), by.y = c("LEM_Kit"), all.x = TRUE)
-  groupedEngines <- group_by(rmaEngines, LED)
-  groupedEngines <- summarize(groupedEngines, "# of RMAs" = length(unique(RMA.ID)),  Qty = sum(Return.Qty))[, c(2, 3, 1)]
+  rmaEngines$LEM <- substring(rmaEngines$Item.ID, 1, 7)
+  rmaEngines <- merge(rmaEngines, light_engine_to_partFam, by.x = c("LEM"), by.y = c("Item_ID"), all.x = TRUE)
+  groupedEngines <- group_by(rmaEngines, LED, Product_Family)[, c(3, 4, 6, 7, 8)]
+  groupedEngines <- summarize(groupedEngines, "# of RMAs" = length(unique(RMA.ID)),  Qty = sum(Return.Qty))[, c(3, 4, 1, 2)]
   groupedEngines <- arrange(groupedEngines, desc(Qty))
   write.csv(groupedEngines, "Code/Output/December_2020/Engines.csv")
 }
 
 getReasonCodes <- function(rma) {
-  codes <- rma[, c(5, 4, 1)]
-  groupedCodes <- group_by(codes, Reason.Code) %>%
+  codes <- rma[, c(5, 3, 1)]
+  groupedCodes <- group_by(codes, code) %>%
     summarize(Number_of_RMAs = length(unique(RMA.ID)), Qty = sum(Return.Qty)) %>%
     arrange(desc(Qty))
   write.csv(groupedCodes, "Code/Output/December_2020/Codes.csv")
