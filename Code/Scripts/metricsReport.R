@@ -19,7 +19,7 @@ light_engines <- read.csv("Code/supportFiles/LightEngines.csv")
 light_engine_to_partFam <- read.csv("Code/supportFiles/LightEngineToPartFam.csv")
 LEM_to_LED <- read.xlsx("Code/supportFiles/LEM_to_LED.xlsx")
 
-rma <- loadData("Code/Failure_rate/2020/December_2020.xlsx")
+rma <- loadData("Code/Failure_rate/2021/January_2021.xlsx")
 rma2 <- select(rma, RMA.ID, Item.ID, Item.Name, Return.Qty, Reason.Code, Month)
 rma3 <- merge(rma2, reasonCodes, by.x = c("Reason.Code"), by.y = c("reason"), all.x = TRUE)[, c(2, 3, 5, 6, 7)]
 
@@ -34,7 +34,7 @@ getDrivers <- function(rma) {
   groupedDrivers1 <- summarise(groupedDrivers1, "# of RMAs" = length(unique(RMA_ID)),  Qty = sum(Return_Qty))
   groupedDrivers1 <- groupedDrivers1[, c(3, 4, 1, 2)]
   groupedDrivers1 <- arrange(groupedDrivers1, desc(Qty))
-  write.csv(groupedDrivers1, "Code/Output/December_2020/Drivers.csv")
+  write.csv(groupedDrivers1, "Code/Output/January_2021/Drivers.csv")
 }
 
 getLightEngines <- function(rma) {
@@ -46,7 +46,7 @@ getLightEngines <- function(rma) {
   groupedEngines <- group_by(rmaEngines, LED, Product_Family)[, c(3, 4, 6, 7, 8)]
   groupedEngines <- summarize(groupedEngines, "# of RMAs" = length(unique(RMA.ID)),  Qty = sum(Return.Qty))[, c(3, 4, 1, 2)]
   groupedEngines <- arrange(groupedEngines, desc(Qty))
-  write.csv(groupedEngines, "Code/Output/December_2020/Engines.csv")
+  write.csv(groupedEngines, "Code/Output/January_2021/Engines.csv")
 }
 
 getReasonCodes <- function(rma) {
@@ -54,7 +54,7 @@ getReasonCodes <- function(rma) {
   groupedCodes <- group_by(codes, code) %>%
     summarize(Number_of_RMAs = length(unique(RMA.ID)), Qty = sum(Return.Qty)) %>%
     arrange(desc(Qty))
-  write.csv(groupedCodes, "Code/Output/December_2020/Codes.csv")
+  write.csv(groupedCodes, "Code/Output/January_2021/Codes.csv")
 }
 
 generateReports <- function(rma) {
