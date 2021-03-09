@@ -51,7 +51,7 @@ getLightEngines <- function(rma) {
   groupedEngines <- group_by(rmaEngines, LED, Product_Family)[, c(3, 4, 6, 7, 8)]
   groupedEngines <- summarize(groupedEngines, "# of RMAs" = length(unique(RMA.ID)),  Qty = sum(Return.Qty))[, c(3, 4, 1, 2)]
   groupedEngines <- arrange(groupedEngines, desc(Qty))
-  write.csv(groupedEngines, engines_out)
+  write.csv(groupedEngines2, engines_out)
 }
 
 getReasonCodes <- function(rma) {
