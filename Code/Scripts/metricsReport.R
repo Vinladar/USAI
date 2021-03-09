@@ -31,12 +31,12 @@ rma3 <- merge(rma2, reasonCodes, by.x = c("Reason.Code"), by.y = c("reason"), al
 getDrivers <- function(rma) {
   rmaDrivers <- rma[grep("SP-[0-9]{3}-[0-9]{4}", rma$Item.ID),]
   driverIDs <- data.frame(do.call("rbind", strsplit(as.character(rmaDrivers$Item.ID), "-", fixed = TRUE)))
-  driversFinal <- cbind(rmaDrivers, driverIDs)[, c(1, 2, 4, 5, 6, 10)]
-  names(driversFinal) <- c("RMA_ID", "Item_ID", "Return_Qty", "Reason_Code", "Month", "DIM_Type")
+  driversFinal <- cbind(rmaDrivers, driverIDs)[, c(1, 2, 3, 4, 8)]
+  names(driversFinal) <- c("RMA_ID", "Item_ID", "Return_Qty", "Reason_Code", "DIM_Type")
   groupedDrivers <- merge(driversFinal, driver_to_E2, by.x = c("Item_ID"), by.y = c("SP_Kit"), all.x = TRUE) %>%
     group_by(E2, DIM_Type)
   groupedDrivers1 <- groupedDrivers[, c(7, 1, 2, 3, 4, 6, 8, 9)]
-  groupedDrivers1 <- summarise(groupedDrivers1, "# of RMAs" = length(unique(RMA_ID)),  Qty = sum(Return_Qty), E2_Cost = sum(E2_Acct_Val), SP_Cost = sum(SP_Acc))
+  groupedDrivers1 <- summarise(groupedDrivers1, "# of RMAs" = length(unique(RMA_ID)),  Qty = sum(Return_Qty), E2_Cost = sum(E2_Acct_Val), SP_Cost = sum(as.numeric(SP_Price)))
   groupedDrivers1 <- groupedDrivers1[, c(3, 4, 1, 2)]
   groupedDrivers1 <- arrange(groupedDrivers1, desc(Qty))
   write.csv(groupedDrivers1, driver_out)
@@ -55,10 +55,10 @@ getLightEngines <- function(rma) {
 }
 
 getReasonCodes <- function(rma) {
-  codes <- rma[, c(5, 3, 1)]
-  groupedCodes <- group_by(codes, code) %>%
-    summarize(Number_of_RMAs = length(unique(RMA.ID)), Qty = sum(Return.Qty)) %>%
-    arrange(desc(Qty))
+  codes <- rma[, c(5, 4, 1)]
+  groupedCodes <- group_by(codes, Reason_Code) %>%
+    summarize(Number_of_RMAs = length(unique(RMA_ID)), Qty = sum(Return_Qty)) %>%
+    arrange(desc(Number_of_RMAs))
   write.csv(groupedCodes, codes_out)
 }
 
