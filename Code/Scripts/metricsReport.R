@@ -31,7 +31,7 @@ rma3 <- merge(rma2, reasonCodes, by.x = c("Reason.Code"), by.y = c("reason"), al
 getDrivers <- function(rma) {
   rmaDrivers <- rma[grep("SP-[0-9]{3}-[0-9]{4}", rma$Item.ID),]
   driverIDs <- data.frame(do.call("rbind", strsplit(as.character(rmaDrivers$Item.ID), "-", fixed = TRUE)))
-  driversFinal <- cbind(rmaDrivers, driverIDs)[, c(1, 2, 3, 4, 8)]
+  driversFinal <- cbind(rmaDrivers, driverIDs)[, c(1, 2, 4, 5, 10)]
   names(driversFinal) <- c("RMA_ID", "Item_ID", "Return_Qty", "Reason_Code", "DIM_Type")
   groupedDrivers <- merge(driversFinal, driver_to_E2, by.x = c("Item_ID"), by.y = c("SP_Kit"), all.x = TRUE) %>%
     group_by(E2, DIM_Type)
