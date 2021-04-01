@@ -26,18 +26,16 @@ LEM_to_LED <- read.xlsx("Code/supportFiles/LEM_to_LED.xlsx")
 
 rma <- loadData(file_location)
 rma2 <- select(rma, RMA.ID, Item.ID, Item.Name, Return.Qty, Reason.Code, Month)
-rma3 <- merge(rma2, reasonCodes, by.x = c("Reason.Code"), by.y = c("reason"), all.x = TRUE)[, c(2, 3, 5, 6, 7)]
+names(rma2) <- c("RMA_ID", "Item_ID", "Item_Name", "Return_Qty", "Reason_Code", "Month")
 
 getDrivers <- function(rma) {
-  rmaDrivers <- rma[grep("SP-[0-9]{3}-[0-9]{4}", rma$Item.ID),]
-  driverIDs <- data.frame(do.call("rbind", strsplit(as.character(rmaDrivers$Item.ID), "-", fixed = TRUE)))
-  driversFinal <- cbind(rmaDrivers, driverIDs)[, c(1, 2, 4, 5, 10)]
+  rmaDrivers <- rma[grep("SP-[0-9]{3}-[0-9]{4}", rma$Item_ID),]
+  driverIDs <- data.frame(do.call("rbind", strsplit(as.character(rmaDrivers$Item_ID), "-", fixed = TRUE)))
+  driversFinal <- cbind(rmaDrivers, driverIDs)[, c(1, 2, 4, 6, 10)]
   names(driversFinal) <- c("RMA_ID", "Item_ID", "Return_Qty", "Reason_Code", "DIM_Type")
   groupedDrivers <- merge(driversFinal, driver_to_E2, by.x = c("Item_ID"), by.y = c("SP_Kit"), all.x = TRUE) %>%
     group_by(E2, DIM_Type)
   groupedDrivers1 <- groupedDrivers[, c(6, 2, 3, 4, 5, 7, 8, 9)]
-  groupedDrivers1$SP_Price <- as.character(groupedDrivers1$SP_Price)
-  groupedDrivers1$SP_Price <- substr(groupedDrivers1$SP_Price, 2, nchar(groupedDrivers1$SP_Price)-1)
   groupedDrivers1$SP_Price <- as.numeric(groupedDrivers1$SP_Price)
   groupedDrivers1$SP_Acct_Val <- groupedDrivers1$SP_Acct_Val * groupedDrivers1$Return_Qty
   groupedDrivers1$E2_Acct_Val <- groupedDrivers1$E2_Acct_Val * groupedDrivers1$Return_Qty
@@ -51,29 +49,30 @@ getDrivers <- function(rma) {
 
 getLightEngines <- function(rma) {
   names(light_engine_to_partFam) <- c("Item_ID", "Product_Family")
-  rmaEngines <- rma[grep("LEM-", rma$Item.ID),]
-  rmaEngines <- merge(rmaEngines, LEM_to_LED, by.x = c("Item.ID"), by.y = c("LEM_Kit"), all.x = TRUE)
-  rmaEngines$LEM <- substring(rmaEngines$Item.ID, 1, 7)
+  rmaEngines <- rma[grep("LEM-", rma$Item_ID),]
+  rmaEngines <- merge(rmaEngines, LEM_to_LED, by.x = c("Item_ID"), by.y = c("LEM_Kit"), all.x = TRUE)
+  rmaEngines$LEM <- substring(rmaEngines$Item_ID, 1, 7)
   rmaEngines <- merge(rmaEngines, light_engine_to_partFam, by.x = c("LEM"), by.y = c("Item_ID"), all.x = TRUE)
   groupedEngines <- group_by(rmaEngines, LED, Product_Family)[, c(3, 5, 6, 8, 9, 10, 11, 12)]
-  groupedEngines$LEM_Acct_Val <- groupedEngines$LEM_Acct_Val * groupedEngines$Return.Qty
-  groupedEngines$LED_Acct_Val <- groupedEngines$LED_Acct_Val * groupedEngines$Return.Qty
-  groupedEngines$LEM_Price <- groupedEngines$LEM_Price * groupedEngines$Return.Qty
-  groupedEngines1 <- summarize(groupedEngines, "# of RMAs" = length(unique(RMA.ID)),  Qty = sum(Return.Qty), LEM_Acct_Val = sum(LEM_Acct_Val), LED_Acct_Val = sum(LED_Acct_Val), LEM_Price = sum(LEM_Price))
+  groupedEngines$LEM_Acct_Val <- groupedEngines$LEM_Acct_Val * groupedEngines$Return_Qty
+  groupedEngines$LED_Acct_Val <- groupedEngines$LED_Acct_Val * groupedEngines$Return_Qty
+  groupedEngines$LEM_Price <- groupedEngines$LEM_Price * groupedEngines$Return_Qty
+  groupedEngines1 <- summarize(groupedEngines, "# of RMAs" = length(unique(RMA_ID)),  Qty = sum(Return_Qty), LEM_Acct_Val = sum(LEM_Acct_Val), LED_Acct_Val = sum(LED_Acct_Val), LEM_Price = sum(LEM_Price))
   groupedEngines1 <- arrange(groupedEngines1, desc(Qty))[, c(3, 4, 1, 2, 6, 5, 7)]
   groupedEngines1$CostToReturn <- groupedEngines1$LEM_Price - groupedEngines1$LEM_Acct_Val
   write.csv(groupedEngines1, engines_out)
 }
 
 getReasonCodes <- function(rma) {
-  codes <- rma[, c(5, 4, 1)]
-  groupedCodes <- group_by(codes, Reason_Code) %>%
+  codes <- rma[, c(6, 4, 1)]
+  groupedCodes <- group_by(codes, reason) %>%
     summarize(Number_of_RMAs = length(unique(RMA_ID)), Qty = sum(Return_Qty)) %>%
     arrange(desc(Number_of_RMAs))
   write.csv(groupedCodes, codes_out)
 }
 
 generateReports <- function(rma) {
+  rma <- merge(rma, reasonCodes, by.x = c("Reason_Code"), by.y = c("code"), all.x = TRUE)[,c(2:7)]
   getDrivers(rma)
   getLightEngines(rma)
   getReasonCodes(rma)

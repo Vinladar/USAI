@@ -1,5 +1,5 @@
 code,reason
-CNN = Changes Not Needed,Changes Not Needed
+CNN = Changes Not Needed ,Changes Not Needed
 CUST = Customer Error,Customer Error
 DIT = Damaged In Transit,Damaged In Transit
 ELE = Electrical,Electrical
