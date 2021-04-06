@@ -39,7 +39,7 @@ buildTable <- function(rma, rmaDetails) {
 
 # Read the reason code CSV and change them in the rma table.
 addReasonCodes <- function(rma) {
-	codes <- read.csv("H:/Code/supportFiles/Reasoncode.csv", header = TRUE)
+	codes <- read.csv("Code/supportFiles/Reasoncode.csv", header = TRUE)
 	rma <- merge(rma, codes, by.x = c("Code"), by.y = c("code"))[c(2:17)]
 	rma
 }
