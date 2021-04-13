@@ -1,21 +1,23 @@
 # This script is designed to take the RMA Detail report in Intuitive and output an Excel file with stats regarding RMAs.
 # This version is an updated version for the metrics (created 6.2.2020)
 # Import the required packages.
-
 library(dplyr)
 library(data.table)
 library(openxlsx)
 library(ggplot2)
 
+# Set the file names for the output locations
 file_location <- "Code/Failure_rate/2021/March_2021.xlsx"
-driver_out <- "Code/Output/March_2021/Drivers.csv"
-engines_out <- "Code/Output/March_2021/Engines.csv"
-codes_out <- "Code/Output/March_2021/Codes.csv"
+driver_out <- "Code/Output/March_2021/Drivers2.csv"
+engines_out <- "Code/Output/March_2021/Engines2.csv"
+codes_out <- "Code/Output/March_2021/Codes2.csv"
 
+# This loads the RMA Detail report at the location specified above
 loadData <- function(fileDir) {
   rma <- read.xlsx(fileDir)
 }
 
+# These are all of the support files that are used to merge data from various locations.
 drivers <- read.csv("Code/supportFiles/Drivers.csv")
 driver_to_E2 <- read.csv("Code/supportFiles/driver_to_E2.csv")
 reasonCodes <- read.csv("Code/supportFiles/Reasoncode.csv")
@@ -73,7 +75,7 @@ getReasonCodes <- function(rma) {
 
 generateReports <- function(rma) {
   rma <- merge(rma, reasonCodes, by.x = c("Reason_Code"), by.y = c("code"), all.x = TRUE)[,c(2:7)]
+  getReasonCodes(rma)
   getDrivers(rma)
   getLightEngines(rma)
-  getReasonCodes(rma)
 }
