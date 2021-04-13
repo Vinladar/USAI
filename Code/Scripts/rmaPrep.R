@@ -31,7 +31,7 @@ buildTable <- function(rma, rmaDetails) {
                          "Misc Line Description", "Problem Desc.", "Replacement Complete") 
   rmaDetails <- arrange(rmaDetails, desc(RMA_ID))
 	rma[, c(2, 3, 4, 6, 11, 13, 14, 16, 17)] = ""
-	## rma[,1] = convertToDate(rma[, 1], origin = "1900-01-01")
+	rma[,1] = convertToDate(rma[, 1], origin = "1900-01-01")
 	rma[,2] <- rmaDetails$SO_ID
 	columns <- c("Date", "orig_SO", "ShipDate", "Specifier", "Customer", 
 		"Job_Name", "RMA_Comments", "Summary", "Product_Family", "Qty", "Qty_On_Order", 
