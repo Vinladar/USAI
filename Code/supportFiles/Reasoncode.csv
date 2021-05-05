@@ -7,3 +7,6 @@ ENG = Engineering Error,Engineering Error
 OE = Order Entry Error,Order Entry Error
 QC = QC Error,QC Error
 SHIP = Shipping Error,Shipping Error
+MFG = Manufacturing error,Manufacturing error
+REP = Rep error,Rep error
+SRT = Sample Return,Sample Return
