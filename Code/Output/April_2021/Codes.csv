@@ -1,0 +1,11 @@
+"","reason","Number_of_RMAs","Qty"
+"1","Electrical",109,679
+"2","Manufacturing error",8,102
+"3","Order Entry Error",7,882
+"4","Shipping Error",7,244
+"5","QC Error",5,42
+"6","Changes Not Needed",3,53
+"7","Customer Error",3,45
+"8","Damaged In Transit",2,6
+"9","Rep error",1,11
+"10","Sample Return",1,1
