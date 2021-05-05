@@ -39,9 +39,10 @@ getDrivers <- function(rma) {
     group_by(E2, DIM_Type)
   groupedDrivers1 <- groupedDrivers[, c(6, 2, 3, 4, 5, 7, 8, 9)]
   groupedDrivers1$SP_Price <- as.numeric(groupedDrivers1$SP_Price)
-  groupedDrivers1$SP_Acct_Val <- groupedDrivers1$SP_Acct_Val * groupedDrivers1$Return_Qty
-  groupedDrivers1$E2_Acct_Val <- groupedDrivers1$E2_Acct_Val * groupedDrivers1$Return_Qty
-  groupedDrivers1$SP_Price <- groupedDrivers1$SP_Price * groupedDrivers1$Return_Qty
+  # Calculated values for SP and E2 cost vs price are not needed. 
+  # groupedDrivers1$SP_Acct_Val <- groupedDrivers1$SP_Acct_Val * groupedDrivers1$Return_Qty
+  # groupedDrivers1$E2_Acct_Val <- groupedDrivers1$E2_Acct_Val * groupedDrivers1$Return_Qty
+  groupedDrivers1$SP_Total_Price <- groupedDrivers1$SP_Price * groupedDrivers1$Return_Qty
   groupedDrivers1 <- summarise(groupedDrivers1, "# of RMAs" = length(unique(RMA_ID)),  Qty = sum(Return_Qty), E2_Acct_Val = sum(E2_Acct_Val), SP_Acct_Val = sum(SP_Acct_Val), SP_Price = sum(SP_Price))
   groupedDrivers1 <- groupedDrivers1[, c(3, 4, 1, 2, 5, 6, 7)]
   groupedDrivers1$CostToReplace <- groupedDrivers1$SP_Price - groupedDrivers1$SP_Acct_Val
