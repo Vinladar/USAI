@@ -36,18 +36,18 @@ getDrivers <- function(rma) {
   driversFinal <- cbind(rmaDrivers, driverIDs)[, c(1, 2, 4, 6, 10)]
   names(driversFinal) <- c("RMA_ID", "Item_ID", "Return_Qty", "Reason_Code", "DIM_Type")
   groupedDrivers <- merge(driversFinal, driver_to_E2, by.x = c("Item_ID"), by.y = c("SP_Kit"), all.x = TRUE) %>%
-    group_by(E2, DIM_Type)
+    group_by(E2, DIM_Type, E2_Acct_Val, SP_Price)
   groupedDrivers1 <- groupedDrivers[, c(6, 2, 3, 4, 5, 7, 8, 9)]
   groupedDrivers1$SP_Price <- as.numeric(groupedDrivers1$SP_Price)
   # Calculated values for SP and E2 cost vs price are not needed. 
   # groupedDrivers1$SP_Acct_Val <- groupedDrivers1$SP_Acct_Val * groupedDrivers1$Return_Qty
   # groupedDrivers1$E2_Acct_Val <- groupedDrivers1$E2_Acct_Val * groupedDrivers1$Return_Qty
   groupedDrivers1$SP_Total_Price <- groupedDrivers1$SP_Price * groupedDrivers1$Return_Qty
-  groupedDrivers1 <- summarise(groupedDrivers1, "# of RMAs" = length(unique(RMA_ID)),  Qty = sum(Return_Qty), E2_Acct_Val = sum(E2_Acct_Val), SP_Acct_Val = sum(SP_Acct_Val), SP_Price = sum(SP_Price))
-  groupedDrivers1 <- groupedDrivers1[, c(3, 4, 1, 2, 5, 6, 7)]
-  groupedDrivers1$CostToReplace <- groupedDrivers1$SP_Price - groupedDrivers1$SP_Acct_Val
-  groupedDrivers1 <- arrange(groupedDrivers1, desc(Qty))
-  write.csv(groupedDrivers1, driver_out)
+  groupedDrivers2 <- summarise(groupedDrivers1, "# of RMAs" = length(unique(RMA_ID)),  Qty = sum(Return_Qty), SP_Total_Price = sum(SP_Total_Price))
+  groupedDrivers2 <- groupedDrivers2[,c(5, 6, 1, 2, 3, 4, 7)]
+  # groupedDrivers1$CostToReplace <- groupedDrivers1$SP_Price - groupedDrivers1$SP_Acct_Val
+  groupedDrivers2 <- arrange(groupedDrivers2, desc(Qty))
+  write.csv(groupedDrivers2, driver_out)
 }
 
 getLightEngines <- function(rma) {
@@ -56,13 +56,14 @@ getLightEngines <- function(rma) {
   rmaEngines <- merge(rmaEngines, LEM_to_LED, by.x = c("Item_ID"), by.y = c("LEM_Kit"), all.x = TRUE)
   rmaEngines$LEM <- substring(rmaEngines$Item_ID, 1, 7)
   rmaEngines <- merge(rmaEngines, light_engine_to_partFam, by.x = c("LEM"), by.y = c("Item_ID"), all.x = TRUE)
-  groupedEngines <- group_by(rmaEngines, LED, Product_Family)[, c(3, 5, 6, 8, 9, 10, 11, 12)]
-  groupedEngines$LEM_Acct_Val <- groupedEngines$LEM_Acct_Val * groupedEngines$Return_Qty
-  groupedEngines$LED_Acct_Val <- groupedEngines$LED_Acct_Val * groupedEngines$Return_Qty
-  groupedEngines$LEM_Price <- groupedEngines$LEM_Price * groupedEngines$Return_Qty
-  groupedEngines1 <- summarize(groupedEngines, "# of RMAs" = length(unique(RMA_ID)),  Qty = sum(Return_Qty), LEM_Acct_Val = sum(LEM_Acct_Val), LED_Acct_Val = sum(LED_Acct_Val), LEM_Price = sum(LEM_Price))
-  groupedEngines1 <- arrange(groupedEngines1, desc(Qty))[, c(3, 4, 1, 2, 6, 5, 7)]
-  groupedEngines1$CostToReturn <- groupedEngines1$LEM_Price - groupedEngines1$LEM_Acct_Val
+  rmaEngines$LEM_Total_Price <- rmaEngines$LEM_Price * rmaEngines$Return_Qty
+  groupedEngines <- group_by(rmaEngines, LED, Product_Family, LED_Acct_Val, LEM_Price)
+  # groupedEngines$LEM_Acct_Val <- groupedEngines$LEM_Acct_Val * groupedEngines$Return_Qty
+  # groupedEngines$LED_Acct_Val <- groupedEngines$LED_Acct_Val * groupedEngines$Return_Qty
+  # groupedEngines$LEM_Price <- groupedEngines$LEM_Price * groupedEngines$Return_Qty
+  groupedEngines1 <- summarize(groupedEngines, "# of RMAs" = length(unique(RMA_ID)),  Qty = sum(Return_Qty), Total_Price = sum(LEM_Total_Price))
+  groupedEngines1 <- arrange(groupedEngines1, desc(Qty))[, c(5, 6, 1, 2, 3, 4, 7)]
+  # groupedEngines1$CostToReturn <- groupedEngines1$LEM_Price - groupedEngines1$LEM_Acct_Val
   write.csv(groupedEngines1, engines_out)
 }
 
