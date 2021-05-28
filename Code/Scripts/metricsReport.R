@@ -7,10 +7,10 @@ library(openxlsx)
 library(ggplot2)
 
 # Set the file names for the output locations
-file_location <- "Code/Failure_rate/2021/April_2021.xlsx"
-driver_out <- "Code/Output/April_2021/Drivers.csv"
-engines_out <- "Code/Output/April_2021/Engines.csv"
-codes_out <- "Code/Output/April_2021/Codes.csv"
+file_location <- "Code/Failure_rate/2021/May_2021_inc.xlsx"
+driver_out <- "Code/Output/2021_YTD/Drivers/DriversMay.csv"
+engines_out <- "Code/Output/2021_YTD/Engines/EnginesMay.csv"
+codes_out <- "Code/Output/2021_YTD/CodesJan.csv"
 
 # This loads the RMA Detail report at the location specified above
 loadData <- function(fileDir) {
@@ -27,6 +27,7 @@ light_engine_to_partFam <- read.csv("Code/supportFiles/LightEngineToPartFam.csv"
 LEM_to_LED <- read.xlsx("Code/supportFiles/LEM_to_LED.xlsx")
 
 rma <- loadData(file_location)
+rma$Month <- "May"
 rma2 <- select(rma, RMA.ID, Item.ID, Item.Name, Return.Qty, Reason.Code, Month)
 names(rma2) <- c("RMA_ID", "Item_ID", "Item_Name", "Return_Qty", "Reason_Code", "Month")
 
