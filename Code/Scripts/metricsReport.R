@@ -7,6 +7,7 @@ library(openxlsx)
 library(ggplot2)
 
 # Set the file names for the output locations
+YTD_master <- "Code/Failure_rate/2021/YTD/2021_YTD.xlsx"
 file_location <- "Code/Failure_rate/2021/May_2021_inc.xlsx"
 driver_out <- "Code/Output/2021_YTD/Drivers/DriversMay.csv"
 engines_out <- "Code/Output/2021_YTD/Engines/EnginesMay.csv"
@@ -77,7 +78,7 @@ getReasonCodes <- function(rma) {
   write.csv(groupedCodes, codes_out)
 }
 
-generateReports <- function(rma) {
+generateReports <- function(rma, month) {
   rma <- merge(rma, reasonCodes, by.x = c("Reason_Code"), by.y = c("code"), all.x = TRUE)[,c(2:7)]
   getReasonCodes(rma)
   getDrivers(rma)
