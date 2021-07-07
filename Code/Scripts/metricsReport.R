@@ -6,17 +6,16 @@ library(data.table)
 library(openxlsx)
 library(ggplot2)
 
-# Set the file names for the output locations
-YTD_master <- "Code/Failure_rate/2021/YTD/2021_YTD.xlsx"
-file_location <- "Code/Failure_rate/2021/May_2021_inc.xlsx"
-driver_out <- "Code/Output/2021_YTD/Drivers/DriversMay.csv"
-engines_out <- "Code/Output/2021_YTD/Engines/EnginesMay.csv"
-codes_out <- "Code/Output/2021_YTD/CodesJan.csv"
-
-# This loads the RMA Detail report at the location specified above
-loadData <- function(fileDir) {
-  rma <- read.xlsx(fileDir)
-}
+# Read in the Master YTD RMA file.
+YTD_master <- read.xlsx("Code/Failure_rate/2021/YTD/2021_YTD.xlsx") %>%
+  select(c("RMA_ID", "Item_ID", "Item_Name", "Return_Qty", "Reason_Code", "Month"))
+YTD_2020 <- read.xlsx("Code/Failure_rate/2020/2020_YTD.xlsx") %>%
+  select(c("RMA.ID", "Item.ID", "Item.Name", "Return.Qty", "Reason.Code", "Month"))
+names(YTD_2020) <- c("RMA_ID", "Item_ID", "Item_Name", "Return_Qty", "Reason_Code", "Month")
+YTD_drivers <- filter(YTD_master, grepl("SP-[0-9]{3}-[0-9]{4}", Item_ID))
+YTD_engines <- filter(YTD_master, grepl("LEM-", Item_ID))
+drivers_2020 <- filter(YTD_2020, grepl("SP-[0-9]{3}-[0-9]{4}", Item_ID))
+engines_2020 <- filter(YTD_2020, grepl("LEM-", Item_ID))
 
 # These are all of the support files that are used to merge data from various locations.
 drivers <- read.csv("Code/supportFiles/Drivers.csv")
@@ -25,62 +24,68 @@ reasonCodes <- read.csv("Code/supportFiles/Reasoncode.csv")
 driver_to_partFam <- read.csv("Code/supportFiles/driverToPartFam.csv")
 light_engines <- read.csv("Code/supportFiles/LightEngines.csv")
 light_engine_to_partFam <- read.csv("Code/supportFiles/LightEngineToPartFam.csv")
-LEM_to_LED <- read.xlsx("Code/supportFiles/LEM_to_LED.xlsx")
+LEM_to_LED <- read.csv("Code/supportFiles/LEM_to_LED.csv")
 
-rma <- loadData(file_location)
-rma$Month <- "May"
-rma2 <- select(rma, RMA.ID, Item.ID, Item.Name, Return.Qty, Reason.Code, Month)
-names(rma2) <- c("RMA_ID", "Item_ID", "Item_Name", "Return_Qty", "Reason_Code", "Month")
+getMonthlyData <- function(month, driver_out, engine_out) {
+  monthlyDrivers <- filter(YTD_drivers, Month == month)
+  monthlyEngines <- filter(YTD_engines, Month == month)
+  getDrivers(monthlyDrivers, driver_out)
+  getLightEngines(monthlyEngines, engine_out)
+}
 
-getDrivers <- function(rma) {
-  rmaDrivers <- rma[grep("SP-[0-9]{3}-[0-9]{4}", rma$Item_ID),]
-  driverIDs <- data.frame(do.call("rbind", strsplit(as.character(rmaDrivers$Item_ID), "-", fixed = TRUE)))
-  driversFinal <- cbind(rmaDrivers, driverIDs)[, c(1, 2, 4, 5, 6, 10)]
-  names(driversFinal) <- c("RMA_ID", "Item_ID", "Return_Qty", "Reason_Code", "Month", "DIM_Type")
-  groupedDrivers <- merge(driversFinal, driver_to_E2, by.x = c("Item_ID"), by.y = c("SP_Kit"), all.x = TRUE)
-  groupedDrivers1 <- groupedDrivers[, c(8, 2, 3, 4, 6, 10, 9, 11)] %>%
+getDrivers <- function(monthlyDrivers, driver_out) {
+  driverIDs <- data.frame(do.call("rbind", strsplit(as.character(monthlyDrivers$Item_ID), "-", fixed = TRUE)))
+  driversFinal <- cbind(monthlyDrivers, driverIDs) %>%
+    select(c("RMA_ID", "Item_ID", "Item_Name", "Return_Qty", "Reason_Code", "X4"))
+  names(driversFinal) <- c("RMA_ID", "Item_ID", "Item_Name", "Return_Qty", "Reason_Code", "DIM_Type")
+  groupedDrivers <- merge(driversFinal, driver_to_E2, by.x = c("Item_ID"), by.y = c("SP_Kit"), all.x = TRUE) %>%
+    select(c("Item_ID", "RMA_ID", "Item_Name", "Return_Qty", "Reason_Code", "DIM_Type", "E2", "SP_Acct_Val", "E2_Acct_Val", "SP_Price")) %>%
     group_by(E2, DIM_Type, E2_Acct_Val, SP_Acct_Val, SP_Price)
-  groupedDrivers1$SP_Price <- as.numeric(groupedDrivers1$SP_Price)
-  groupedDrivers1$SP_Price <- as.numeric(groupedDrivers1$SP_Acct_Val)
-  groupedDrivers1$SP_Price <- as.numeric(groupedDrivers1$E2_Acct_Val)
-  # Calculated values for SP and E2 cost vs price are not needed. 
-  # groupedDrivers1$SP_Acct_Val <- groupedDrivers1$SP_Acct_Val * groupedDrivers1$Return_Qty
-  # groupedDrivers1$E2_Acct_Val <- groupedDrivers1$E2_Acct_Val * groupedDrivers1$Return_Qty
-  groupedDrivers2 <- summarise(groupedDrivers1, "# of RMAs" = length(unique(RMA_ID)),  Qty = sum(Return_Qty))
-  groupedDrivers2 <- groupedDrivers2[, c(6, 7, 1, 2, 3, 4, 5)]
-  # groupedDrivers1$CostToReplace <- groupedDrivers1$SP_Price - groupedDrivers1$SP_Acct_Val
-  groupedDrivers2 <- arrange(groupedDrivers2, desc(Qty))
-  write.csv(groupedDrivers2, driver_out)
+  groupedDrivers$SP_Price <- as.numeric(groupedDrivers$SP_Price)
+  groupedDrivers$SP_Acct_Val <- as.numeric(groupedDrivers$SP_Acct_Val)
+  groupedDrivers$E2_Acct_Val <- as.numeric(groupedDrivers$E2_Acct_Val)
+  groupedDrivers1 <- summarise(groupedDrivers, "# of RMAs" = length(unique(RMA_ID)),  Qty = sum(Return_Qty))
+  groupedDrivers1 <- arrange(groupedDrivers1, desc(Qty))
+  write.csv(groupedDrivers1, driver_out)
 }
 
-getLightEngines <- function(rma) {
-  names(light_engine_to_partFam) <- c("Item_ID", "Product_Family")
-  rmaEngines <- rma[grep("LEM-", rma$Item_ID),]
-  rmaEngines <- merge(rmaEngines, LEM_to_LED, by.x = c("Item_ID"), by.y = c("LEM_Kit"), all.x = TRUE)
+getLightEngines <- function(monthlyEngines, engine_out) {
+  rmaEngines <- merge(monthlyEngines, LEM_to_LED, by.x = c("Item_ID"), by.y = c("LEM_Kit"), all.x = TRUE)
   rmaEngines$LEM <- substring(rmaEngines$Item_ID, 1, 7)
-  rmaEngines <- merge(rmaEngines, light_engine_to_partFam, by.x = c("LEM"), by.y = c("Item_ID"), all.x = TRUE)
-  rmaEngines$LEM_Total_Price <- rmaEngines$LEM_Price * rmaEngines$Return_Qty
+  rmaEngines <- merge(rmaEngines, light_engine_to_partFam, by.x = c("LEM"), by.y = c("Item.ID"), all.x = TRUE)
+  names(rmaEngines) <- c("LEM", "Item_ID", "RMA_ID", "Item_Name" , "Return_Qty", 
+                         "Reason_Code", "Month", "LED", "LEM_Acct_Val", 
+                         "LED_Acct_Val", "LEM_Price", "Product_Family")
   groupedEngines <- group_by(rmaEngines, LED, Product_Family, LED_Acct_Val, LEM_Acct_Val, LEM_Price)
-  # groupedEngines$LEM_Acct_Val <- groupedEngines$LEM_Acct_Val * groupedEngines$Return_Qty
-  # groupedEngines$LED_Acct_Val <- groupedEngines$LED_Acct_Val * groupedEngines$Return_Qty
-  # groupedEngines$LEM_Price <- groupedEngines$LEM_Price * groupedEngines$Return_Qty
   groupedEngines1 <- summarize(groupedEngines, "# of RMAs" = length(unique(RMA_ID)),  Qty = sum(Return_Qty))
-  groupedEngines1 <- arrange(groupedEngines1, desc(Qty))[, c(6, 7, 1, 2, 3, 4)]
-  # groupedEngines1$CostToReturn <- groupedEngines1$LEM_Price - groupedEngines1$LEM_Acct_Val
-  write.csv(groupedEngines1, engines_out)
+  groupedEngines1 <- arrange(groupedEngines1, desc(Qty)) %>%
+    select(c("# of RMAs", "Qty", "LED", "Product_Family", "LED_Acct_Val", "LEM_Acct_Val", "LEM_Price"))
+  write.csv(groupedEngines1, engine_out)
 }
 
-getReasonCodes <- function(rma) {
-  codes <- rma[, c(6, 4, 1)]
-  groupedCodes <- group_by(codes, reason) %>%
-    summarize(Number_of_RMAs = length(unique(RMA_ID)), Qty = sum(Return_Qty)) %>%
-    arrange(desc(Number_of_RMAs))
-  write.csv(groupedCodes, codes_out)
+getYTDData <- function(driver_output, engine_output) {
+  getYTDDrivers(driver_output)
+  getYTDEngines(engine_output)
 }
 
-generateReports <- function(rma, month) {
-  rma <- merge(rma, reasonCodes, by.x = c("Reason_Code"), by.y = c("code"), all.x = TRUE)[,c(2:7)]
-  getReasonCodes(rma)
-  getDrivers(rma)
-  getLightEngines(rma)
+getYTDDrivers <- function(driver_output) {
+  YTD_drivers <- merge(YTD_drivers, driver_to_E2, by.x = c("Item_ID"), by.y = c("SP_Kit"), all.x = TRUE) %>%
+    select(c(E2, Return_Qty, SP_Acct_Val, E2_Acct_Val, SP_Price, Month)) %>%
+    group_by(E2, Month, SP_Acct_Val)
+  Grouped_YTD_drivers <- summarize(YTD_drivers, Return_Qty = sum(Return_Qty)) %>%
+    arrange(desc(E2))
+  write.csv(Grouped_YTD_drivers, driver_output)
+}
+
+getYTDEngines <- function(engine_output) {
+  YTD_engines <- merge(YTD_engines, LEM_to_LED, by.x = c("Item_ID"), by.y = c("LEM_Kit"), all.x = TRUE) %>%
+    select(c(LED, Return_Qty, LEM_Acct_Val, LED_Acct_Val, LEM_Price, Month)) %>%
+    group_by(LED, Month, LEM_Acct_Val)
+  Grouped_YTD_engines <- summarize(YTD_engines, Return_Qty = sum(Return_Qty)) %>%
+    arrange(desc(LED))
+  write.csv(Grouped_YTD_engines, engine_output)
+}
+
+get2020YTD <- function(driver_output, engine_output) {
+  
 }
