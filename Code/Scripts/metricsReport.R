@@ -39,12 +39,12 @@ getDrivers <- function(monthlyDrivers, driver_out) {
     select(c("RMA_ID", "Item_ID", "Item_Name", "Return_Qty", "Reason_Code", "X4"))
   names(driversFinal) <- c("RMA_ID", "Item_ID", "Item_Name", "Return_Qty", "Reason_Code", "DIM_Type")
   groupedDrivers <- merge(driversFinal, driver_to_E2, by.x = c("Item_ID"), by.y = c("SP_Kit"), all.x = TRUE) %>%
-    select(c("Item_ID", "RMA_ID", "Item_Name", "Return_Qty", "Reason_Code", "DIM_Type", "E2", "SP_Acct_Val", "E2_Acct_Val", "SP_Price")) %>%
-    group_by(E2, DIM_Type, E2_Acct_Val, SP_Acct_Val, SP_Price)
-  groupedDrivers$SP_Price <- as.numeric(groupedDrivers$SP_Price)
+    select(c("Item_ID", "RMA_ID", "Item_Name", "Return_Qty", "Reason_Code", "DIM_Type", "E2", "SP_Acct_Val", "E2_Acct_Val")) %>%
+    group_by(E2, DIM_Type, E2_Acct_Val, SP_Acct_Val)
   groupedDrivers$SP_Acct_Val <- as.numeric(groupedDrivers$SP_Acct_Val)
   groupedDrivers$E2_Acct_Val <- as.numeric(groupedDrivers$E2_Acct_Val)
   groupedDrivers1 <- summarise(groupedDrivers, "# of RMAs" = length(unique(RMA_ID)),  Qty = sum(Return_Qty))
+  groupedDrivers1$Total_cost <- groupedDrivers1$SP_Acct_Val * groupedDrivers1$Qty
   groupedDrivers1 <- arrange(groupedDrivers1, desc(Qty))
   write.csv(groupedDrivers1, driver_out)
 }
@@ -59,7 +59,8 @@ getLightEngines <- function(monthlyEngines, engine_out) {
   groupedEngines <- group_by(rmaEngines, LED, Product_Family, LED_Acct_Val, LEM_Acct_Val, LEM_Price)
   groupedEngines1 <- summarize(groupedEngines, "# of RMAs" = length(unique(RMA_ID)),  Qty = sum(Return_Qty))
   groupedEngines1 <- arrange(groupedEngines1, desc(Qty)) %>%
-    select(c("# of RMAs", "Qty", "LED", "Product_Family", "LED_Acct_Val", "LEM_Acct_Val", "LEM_Price"))
+    select(c("# of RMAs", "Qty", "LED", "Product_Family", "LED_Acct_Val", "LEM_Acct_Val"))
+  groupedEngines1$Total_cost <- groupedEngines1$LEM_Acct_Val * groupedEngines1$Qty
   write.csv(groupedEngines1, engine_out)
 }
 
@@ -71,7 +72,7 @@ getYTDData <- function(driver_output, engine_output) {
 getYTDDrivers <- function(driver_output) {
   YTD_drivers <- merge(YTD_drivers, driver_to_E2, by.x = c("Item_ID"), by.y = c("SP_Kit"), all.x = TRUE) %>%
     select(c(E2, Return_Qty, SP_Acct_Val, E2_Acct_Val, SP_Price, Month)) %>%
-    group_by(E2, Month, SP_Acct_Val)
+    group_by(E2, Month, SP_Acct_Val, E2_Acct_Val)
   Grouped_YTD_drivers <- summarize(YTD_drivers, Return_Qty = sum(Return_Qty)) %>%
     arrange(desc(E2))
   write.csv(Grouped_YTD_drivers, driver_output)
