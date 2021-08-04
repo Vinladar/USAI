@@ -70,19 +70,21 @@ getYTDData <- function(driver_output, engine_output) {
 }
 
 getYTDDrivers <- function(driver_output) {
-  YTD_drivers <- merge(YTD_drivers, driver_to_E2, by.x = c("Item_ID"), by.y = c("SP_Kit"), all.x = TRUE) %>%
-    select(c(E2, Return_Qty, SP_Acct_Val, E2_Acct_Val, SP_Price, Month)) %>%
-    group_by(E2, Month, SP_Acct_Val, E2_Acct_Val)
-  Grouped_YTD_drivers <- summarize(YTD_drivers, Return_Qty = sum(Return_Qty)) %>%
-    arrange(desc(E2))
+  YTD_drivers1 <- merge(YTD_drivers, driver_to_E2, by.x = c("Item_ID"), by.y = c("SP_Kit"), all.x = TRUE) %>%
+    select(c(E2, Return_Qty, SP_Acct_Val, Month))
+  YTD_drivers1$Total_Cost <- YTD_drivers1$Return_Qty * YTD_drivers1$SP_Acct_Val
+  Grouped_YTD_drivers <- group_by(YTD_drivers1, E2, Month)
+  Grouped_YTD_drivers <- summarize(Grouped_YTD_drivers, Return_Qty = sum(Return_Qty), Total_Cost = sum(Total_Cost)) %>%
+  arrange(desc(E2))
   write.csv(Grouped_YTD_drivers, driver_output)
 }
 
 getYTDEngines <- function(engine_output) {
   YTD_engines <- merge(YTD_engines, LEM_to_LED, by.x = c("Item_ID"), by.y = c("LEM_Kit"), all.x = TRUE) %>%
-    select(c(LED, Return_Qty, LEM_Acct_Val, LED_Acct_Val, LEM_Price, Month)) %>%
-    group_by(LED, Month, LEM_Acct_Val)
-  Grouped_YTD_engines <- summarize(YTD_engines, Return_Qty = sum(Return_Qty)) %>%
+    select(c(LED, Return_Qty, LEM_Acct_Val, Month))
+  YTD_engines$Total_Cost <- YTD_engines$Return_Qty * YTD_engines$LEM_Acct_Val
+  Grouped_YTD_engines <- group_by(YTD_engines, LED, Month)
+  Grouped_YTD_engines <- summarize(Grouped_YTD_engines, Return_Qty = sum(Return_Qty), Total_Cost = sum(Total_Cost)) %>%
     arrange(desc(LED))
   write.csv(Grouped_YTD_engines, engine_output)
 }
