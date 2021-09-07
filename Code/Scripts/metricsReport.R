@@ -25,6 +25,7 @@ driver_to_partFam <- read.csv("Code/supportFiles/driverToPartFam.csv")
 light_engines <- read.csv("Code/supportFiles/LightEngines.csv")
 light_engine_to_partFam <- read.csv("Code/supportFiles/LightEngineToPartFam.csv")
 LEM_to_LED <- read.csv("Code/supportFiles/LEM_to_LED.csv")
+names(LEM_to_LED) <- c("LEM_Kit", "LED", "LEM_Acct_Val", "LED_Acct_Val", "LEM_Price")
 
 getMonthlyData <- function(month, driver_out, engine_out) {
   monthlyDrivers <- filter(YTD_drivers, Month == month)
@@ -45,6 +46,7 @@ getDrivers <- function(monthlyDrivers, driver_out) {
   groupedDrivers$E2_Acct_Val <- as.numeric(groupedDrivers$E2_Acct_Val)
   groupedDrivers1 <- summarise(groupedDrivers, "# of RMAs" = length(unique(RMA_ID)),  Qty = sum(Return_Qty))
   groupedDrivers1$Total_cost <- groupedDrivers1$SP_Acct_Val * groupedDrivers1$Qty
+  groupedDrivers1 <- select(groupedDrivers1, "# of RMAs", "Qty", "E2", "DIM_Type", "E2_Acct_Val", "SP_Acct_Val", "Total_cost")
   groupedDrivers1 <- arrange(groupedDrivers1, desc(Qty))
   write.csv(groupedDrivers1, driver_out)
 }
