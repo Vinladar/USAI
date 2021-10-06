@@ -49,7 +49,7 @@ getDrivers <- function(monthlyDrivers, driver_out) {
   driversFinal1$E2_Acct_Val <- as.numeric(driversFinal1$E2_Acct_Val)
   nullDrivers <- filter(driversFinal1, is.na(E2))
   if (nrow(nullDrivers) > 0) 
-    return(write.csv(nullDrivers, str_c(driver_out, "NULLdrivers.xlsx")))
+    return(write.csv(nullDrivers, str_c(driver_out, "NULLdrivers.csv")))
   driversFinal1$Total_cost <- driversFinal1$Return_Qty * driversFinal1$SP_Price
   groupedDrivers <- driversFinal1 %>%
     group_by(E2, DIM_Type, E2_Acct_Val, SP_Acct_Val)
@@ -57,7 +57,7 @@ getDrivers <- function(monthlyDrivers, driver_out) {
   groupedDrivers1 <- summarise(groupedDrivers, "# of RMAs" = length(unique(RMA_ID)),  Qty = sum(Return_Qty), Total_cost = sum(Total_cost))
   groupedDrivers1 <- select(groupedDrivers1, "# of RMAs", "Qty", "E2", "DIM_Type", "E2_Acct_Val", "SP_Acct_Val", "Total_cost")
   groupedDrivers1 <- arrange(groupedDrivers1, desc(Qty))
-  write.csv(groupedDrivers1, str_c(driver_out, "Drivers.xlsx"))
+  write.csv(groupedDrivers1, str_c(driver_out, "Drivers.csv"))
   top15Drivers <- head(groupedDrivers1, 15)
   g <- ggplot(data = top15Drivers) + geom_col(aes(x = reorder(E2, -Qty), y = Qty))
   g
@@ -68,7 +68,7 @@ getLightEngines <- function(monthlyEngines, engine_out) {
     left_join(LEM_to_LED, by = c("Item_ID" = "LEM_Kit"))
   nullEngines <- filter(rmaEngines, is.na(LED))
   if (nrow(nullEngines) > 0) 
-    return(write.csv(nullEngines, str_c(engine_out, "NULLengines.xlsx")))
+    return(write.csv(nullEngines, str_c(engine_out, "NULLengines.csv")))
   rmaEngines$LEM <- substring(rmaEngines$Item_ID, 1, 7)
   rmaEngines1 <- rmaEngines %>%
     left_join(light_engine_to_partFam, by = c("LEM" = "Item.ID"))
@@ -81,7 +81,7 @@ getLightEngines <- function(monthlyEngines, engine_out) {
   groupedEngines1 <- arrange(groupedEngines1, desc(Qty)) %>%
     select(c("# of RMAs", "Qty", "LED", "Product_Family", "LED_Acct_Val", "LEM_Acct_Val"))
   groupedEngines1$Total_cost <- groupedEngines1$LEM_Acct_Val * groupedEngines1$Qty
-  write.csv(groupedEngines1, str_c(engine_out, "Engines.xlsx"))
+  write.csv(groupedEngines1, str_c(engine_out, "Engines.csv"))
 }
 
 getYTDData <- function(driver_output, engine_output) {
