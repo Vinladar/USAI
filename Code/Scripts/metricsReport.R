@@ -50,7 +50,7 @@ getDrivers <- function(monthlyDrivers, driver_out) {
   nullDrivers <- filter(driversFinal1, is.na(E2))
   if (nrow(nullDrivers) > 0) 
     return(write.csv(nullDrivers, str_c(driver_out, "NULLdrivers.csv")))
-  driversFinal1$Total_cost <- driversFinal1$Return_Qty * driversFinal1$SP_Price
+  driversFinal1$Total_cost <- driversFinal1$Return_Qty * driversFinal1$SP_Acct_Val
   groupedDrivers <- driversFinal1 %>%
     group_by(E2, DIM_Type, E2_Acct_Val, SP_Acct_Val)
     
