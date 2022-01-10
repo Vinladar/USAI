@@ -25,6 +25,7 @@ driver_to_partFam <- read.csv("Code/supportFiles/driverToPartFam.csv")
 light_engines <- read.csv("Code/supportFiles/LightEngines.csv")
 light_engine_to_partFam <- read.csv("Code/supportFiles/LightEngineToPartFam.csv")
 LEM_to_LED <- read.csv("Code/supportFiles/LEM_to_LED.csv")
+LEM_to_LED <- LEM_to_LED[, -6]
 names(LEM_to_LED) <- c("LEM_Kit", "LED", "LEM_Acct_Val", "LED_Acct_Val", "LEM_Price")
 
 getMonthlyData <- function(month, driver_out, engine_out) {
