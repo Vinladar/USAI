@@ -8,11 +8,10 @@ library(openxlsx)
 library(ggplot2)
 
 # Read in the Master YTD RMA file.
-YTD_master <- read.xlsx("Code/Failure_rate/2021/YTD/2021_YTD.xlsx") %>%
-  select(c("RMA_ID", "Item_ID", "Item_Name", "Return_Qty", "Reason_Code", "Month"))
 YTD_2020 <- read.xlsx("Code/Failure_rate/2020/2020_YTD.xlsx") %>%
   select(c("RMA.ID", "Item.ID", "Item.Name", "Return.Qty", "Reason.Code", "Month"))
 names(YTD_2020) <- c("RMA_ID", "Item_ID", "Item_Name", "Return_Qty", "Reason_Code", "Month")
+YTD_master <- read.xlsx("Code/Failure_rate/2021/YTD/2021_YTD.xlsx")
 YTD_drivers <- filter(YTD_master, grepl("SP-[0-9]{3}-[0-9]{4}", Item_ID))
 YTD_engines <- filter(YTD_master, grepl("LEM-", Item_ID))
 drivers_2020 <- filter(YTD_2020, grepl("SP-[0-9]{3}-[0-9]{4}", Item_ID))
