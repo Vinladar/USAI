@@ -26,6 +26,9 @@ light_engines <- read.csv("Code/supportFiles/LightEngines.csv")
 light_engine_to_partFam <- read.csv("Code/supportFiles/LightEngineToPartFam.csv")
 LEM_to_LED <- read.csv("Code/supportFiles/LEM_to_LED.csv")
 LEM_to_LED <- LEM_to_LED[, -6]
+LEM_to_LED$LEM_Acct_Val <- as.numeric(LEM_to_LED$LEM_Acct_Val)
+LEM_to_LED$LED_Acct_Val <- as.numeric(LEM_to_LED$LED_Acct_Val)
+LEM_to_LED$LEM_Price <- as.numeric(LEM_to_LED$LEM_Price)
 names(LEM_to_LED) <- c("LEM_Kit", "LED", "LEM_Acct_Val", "LED_Acct_Val", "LEM_Price")
 
 getMonthlyData <- function(month, driver_out, engine_out) {
@@ -72,9 +75,13 @@ getLightEngines <- function(monthlyEngines, engine_out) {
   rmaEngines$LEM <- substring(rmaEngines$Item_ID, 1, 7)
   rmaEngines1 <- rmaEngines %>%
     left_join(light_engine_to_partFam, by = c("LEM" = "Item.ID"))
-  names(rmaEngines1) <- c("RMA_ID", "Item_ID", "Item_Name", "Return_Qty", 
+  names(rmaEngines1) <- c("RMA_ID", "Item_ID", "Return_Qty", "Item_Name", 
                           "Reason_Code", "Month", "LED", "LEM_Acct_Val", 
                           "LED_Acct_Val", "LEM_Price", "LEM", "Product_Family")
+  rmaEngines1$Return_Qty <- as.numeric(rmaEngines1$Return_Qty)
+  rmaEngines1$LEM_Acct_Val <- as.numeric(rmaEngines1$LEM_Acct_Val)
+  rmaEngines1$LED_Acct_Val <- as.numeric(rmaEngines1$LED_Acct_Val)
+  rmaEngines1$LEM_Price <- as.numeric(rmaEngines1$LEM_Price)
   groupedEngines <- rmaEngines1 %>%
     group_by(LED, Product_Family, LED_Acct_Val, LEM_Acct_Val, LEM_Price)
   groupedEngines1 <- summarize(groupedEngines, "# of RMAs" = length(unique(RMA_ID)),  Qty = sum(Return_Qty))
