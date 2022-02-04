@@ -11,7 +11,8 @@ library(ggplot2)
 YTD_2020 <- read.xlsx("Code/Failure_rate/2020/2020_YTD.xlsx") %>%
   select(c("RMA.ID", "Item.ID", "Item.Name", "Return.Qty", "Reason.Code", "Month"))
 names(YTD_2020) <- c("RMA_ID", "Item_ID", "Item_Name", "Return_Qty", "Reason_Code", "Month")
-YTD_master <- read.xlsx("Code/Failure_rate/2021/YTD/2021_YTD.xlsx")
+YTD_master <- read.xlsx("Code/Failure_rate/2022/YTD_2022.xlsx")
+names(YTD_master) <- c("RMA_ID", "Item_ID", "Item_Name", "Return_Qty", "Reason_Code", "Month")
 YTD_drivers <- filter(YTD_master, grepl("SP-[0-9]{3}-[0-9]{4}", Item_ID))
 YTD_engines <- filter(YTD_master, grepl("LEM-", Item_ID))
 drivers_2020 <- filter(YTD_2020, grepl("SP-[0-9]{3}-[0-9]{4}", Item_ID))
@@ -42,7 +43,7 @@ getDrivers <- function(monthlyDrivers, driver_out) {
   driverIDs <- data.frame(do.call("rbind", strsplit(as.character(monthlyDrivers$Item_ID), "-", fixed = TRUE)))
   driversFinal <- cbind(monthlyDrivers, driverIDs) %>%
     select(c("RMA_ID", "Item_ID", "Item_Name", "Return_Qty", "Reason_Code", "X4"))
-  names(driversFinal) <- c("RMA_ID", "Item_ID", "Item_Name", "Return_Qty", "Reason_Code", "DIM_Type")
+  names(driversFinal) <- c("RMA_ID", "Item_ID", "Return_Qty", "Item_Name", "Reason_Code", "DIM_Type")
   driversFinal1 <- driversFinal %>%
     left_join(driver_to_E2, by = c("Item_ID" = "SP_Kit")) %>%
     select("RMA_ID", "Item_ID", "Item_Name", "Return_Qty", "Reason_Code", 
@@ -50,6 +51,7 @@ getDrivers <- function(monthlyDrivers, driver_out) {
   
   driversFinal1$SP_Acct_Val <- as.numeric(driversFinal1$SP_Acct_Val)
   driversFinal1$E2_Acct_Val <- as.numeric(driversFinal1$E2_Acct_Val)
+  driversFinal1$Return_Qty <- as.numeric(driversFinal1$Return_Qty)
   nullDrivers <- filter(driversFinal1, is.na(E2))
   if (nrow(nullDrivers) > 0) 
     return(write.csv(nullDrivers, str_c(driver_out, "NULLdrivers.csv")))
