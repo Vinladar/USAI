@@ -62,10 +62,11 @@ getDrivers <- function(monthlyDrivers, driver_out) {
   groupedDrivers1 <- summarise(groupedDrivers, "# of RMAs" = length(unique(RMA_ID)),  Qty = sum(Return_Qty), Total_cost = sum(Total_cost))
   groupedDrivers1 <- select(groupedDrivers1, "# of RMAs", "Qty", "E2", "DIM_Type", "E2_Acct_Val", "SP_Acct_Val", "Total_cost")
   groupedDrivers1 <- arrange(groupedDrivers1, desc(Qty))
-  groupedDriversNoOutliers <- head(filter(groupedDrivers1, E2 != "E2-526" & E2 != "E2-527"), 15)
+  groupedDriversNoOutliers <- filter(groupedDrivers1, E2 != "E2-526" & E2 != "E2-527")
   write.csv(groupedDrivers1, str_c(driver_out, "Drivers.csv"))
   write.csv(head(groupedDrivers1, 15), str_c(driver_out, "DriversTop15.csv"))
-  write.csv(groupedDriversNoOutliers, str_c(driver_out, "DriversTop15NoOutliers.csv"))
+  write.csv(groupedDriversNoOutliers, str_c(driver_out, "DriversNoOutliers.csv"))
+  write.csv(head(groupedDriversNoOutliers, 15), str_c(driver_out, "DriversTop15NoOutliers.csv"))
 }
 
 getLightEngines <- function(monthlyEngines, engine_out) {
@@ -95,6 +96,7 @@ getLightEngines <- function(monthlyEngines, engine_out) {
   write.csv(groupedEngines1, str_c(engine_out, "Engines.csv"))
   write.csv(head(groupedEngines1, 15), str_c(engine_out, "EnginesTop15.csv"))
   write.csv(head(groupedEnginesNoOutliers, 15), str_c(engine_out, "EnginesTop15NoOutliers.csv"))
+  write.csv(groupedEnginesNoOutliers, str_c(engine_out, "EnginesNoOutliers.csv"))
 }
 
 getYTDData <- function(driver_output, engine_output) {
