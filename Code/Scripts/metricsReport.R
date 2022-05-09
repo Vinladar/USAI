@@ -58,7 +58,7 @@ getDrivers <- function(monthlyDrivers, driver_out) {
   driversFinal1$Total_cost <- driversFinal1$Return_Qty * driversFinal1$SP_Acct_Val
   groupedDrivers <- driversFinal1 %>%
     group_by(E2, DIM_Type, E2_Acct_Val, SP_Acct_Val)
-    
+  
   groupedDrivers1 <- summarise(groupedDrivers, "# of RMAs" = length(unique(RMA_ID)),  Qty = sum(Return_Qty), Total_cost = sum(Total_cost))
   groupedDrivers1 <- select(groupedDrivers1, "# of RMAs", "Qty", "E2", "DIM_Type", "E2_Acct_Val", "SP_Acct_Val", "Total_cost")
   groupedDrivers1 <- arrange(groupedDrivers1, desc(Qty))
@@ -110,7 +110,7 @@ getYTDDrivers <- function(driver_output) {
   YTD_drivers1$Total_Cost <- YTD_drivers1$Return_Qty * YTD_drivers1$SP_Acct_Val
   Grouped_YTD_drivers <- group_by(YTD_drivers1, E2, Month)
   Grouped_YTD_drivers <- summarize(Grouped_YTD_drivers, Return_Qty = sum(Return_Qty), Total_Cost = sum(Total_Cost)) %>%
-  arrange(desc(E2))
+    arrange(desc(E2))
   write.csv(Grouped_YTD_drivers, driver_output)
 }
 
